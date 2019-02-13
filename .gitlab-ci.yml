@@ -214,7 +214,7 @@ stop_review:
 
   function trigger_deploy() {
     apk add curl
-    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master http://gitlab-gitlab/api/v4/projects/1/trigger/pipeline
+    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master http://gitlab-gitlab/api/v4/projects/4/trigger/pipeline
   }
 
 before_script:
