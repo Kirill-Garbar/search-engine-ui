@@ -108,7 +108,7 @@ stop_review:
     git clone http://gitlab-gitlab/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
 
     echo "Download helm dependencies..."
-    helm dep update reddit
+    helm dep update search-engine
 
     echo "Deploy helm release $name to $KUBE_NAMESPACE"
     helm upgrade --install \
@@ -118,7 +118,7 @@ stop_review:
       --namespace="$KUBE_NAMESPACE" \
       --version="$CI_PIPELINE_ID-$CI_JOB_ID" \
       "$name" \
-      reddit
+      search-engine
   }
 
   function install_dependencies() {
@@ -212,7 +212,7 @@ stop_review:
 
   function trigger_deploy() {
     apk add curl
-    curl -X POST -F token=$CI_REDDIT_DEPLOY_TOKEN -F ref=master http://gitlab-gitlab/api/v4/projects/1/trigger/pipeline
+    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master http://gitlab-gitlab/api/v4/projects/1/trigger/pipeline
   }
 
 before_script:
