@@ -105,10 +105,10 @@ stop_review:
     fi
 
     echo "Clone deploy repository..."
-    git clone http://gitlab-gitlab/$CI_PROJECT_NAMESPACE/reddit-deploy.git
+    git clone http://gitlab-gitlab/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
 
     echo "Download helm dependencies..."
-    helm dep update reddit-deploy/reddit
+    helm dep update reddit
 
     echo "Deploy helm release $name to $KUBE_NAMESPACE"
     helm upgrade --install \
@@ -118,7 +118,7 @@ stop_review:
       --namespace="$KUBE_NAMESPACE" \
       --version="$CI_PIPELINE_ID-$CI_JOB_ID" \
       "$name" \
-      reddit-deploy/reddit/
+      reddit
   }
 
   function install_dependencies() {
