@@ -96,31 +96,29 @@ stop_review:
   export CI_CONTAINER_NAME=ci_job_build_${CI_JOB_ID}
   export TILLER_NAMESPACE="kube-system"
 
-  function deploy() {
-    track="${1-stable}"
-    name="$CI_ENVIRONMENT_SLUG"
-
-    if [[ "$track" != "stable" ]]; then
-      name="$name-$track"
+  function setup_docker() {
+    if ! docker info &>/dev/null; then
+      if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
+        export DOCKER_HOST='tcp://localhost:2375'
+      fi
     fi
+  }
 
-    echo "Clone deploy repository..."
-    git clone http://gitlab-gitlab/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
+  function ensure_namespace() {
+    kubectl describe namespace "$KUBE_NAMESPACE" || kubectl create namespace "$KUBE_NAMESPACE"
+  }
 
-    ls -al
-
-    echo "Download helm dependencies..."
-    helm dep update search-engine-deploy/search-engine
-
-    echo "Deploy helm release $name to $KUBE_NAMESPACE"
-    helm upgrade --install \
-      --wait \
-      --set search-engine-ui.ingress.host="$host" \
-      --set $CI_PROJECT_NAME.image.tag=$CI_APPLICATION_TAG \
-      --namespace="$KUBE_NAMESPACE" \
-      --version="$CI_PIPELINE_ID-$CI_JOB_ID" \
-      "$name" \
-      search-engine-deploy/search-engine
+  function install_tiller() {
+    echo "Checking Tiller..."
+    echo "tst2"
+    helm init --upgrade
+    echo "tst"
+    kubectl rollout status -n "$TILLER_NAMESPACE" -w "deployment/tiller-deploy"
+    if ! helm version --debug; then
+      echo "Failed to init Tiller."
+      return 1
+    fi
+    echo ""
   }
 
   function install_dependencies() {
@@ -147,17 +145,23 @@ stop_review:
     kubectl version --client
   }
 
-  function setup_docker() {
-    if ! docker info &>/dev/null; then
-      if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
-        export DOCKER_HOST='tcp://localhost:2375'
-      fi
+  function build() {
+    echo "Building Dockerfile-based application..."
+    echo `git show --format="%h" HEAD | head -1` > build_info.txt
+    echo `git rev-parse --abbrev-ref HEAD` >> build_info.txt
+    docker build -t "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" .
+
+    if [[ -n "$CI_REGISTRY_USER" ]]; then
+      echo "Logging to GitLab Container Registry with CI credentials..."
+      docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+      echo ""
     fi
+
+    echo "Pushing to GitLab Container Registry..."
+    docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG"
+    echo ""
   }
 
-  function ensure_namespace() {
-    kubectl describe namespace "$KUBE_NAMESPACE" || kubectl create namespace "$KUBE_NAMESPACE"
-  }
 
   function release() {
 
@@ -175,35 +179,29 @@ stop_review:
     echo ""
   }
 
-  function build() {
+  function deploy() {
+    track="${1-stable}"
+    name="$CI_ENVIRONMENT_SLUG"
 
-    echo "Building Dockerfile-based application..."
-    echo `git show --format="%h" HEAD | head -1` > build_info.txt
-    echo `git rev-parse --abbrev-ref HEAD` >> build_info.txt
-    docker build -t "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" .
-
-    if [[ -n "$CI_REGISTRY_USER" ]]; then
-      echo "Logging to GitLab Container Registry with CI credentials..."
-      docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
-      echo ""
+    if [[ "$track" != "stable" ]]; then
+      name="$name-$track"
     fi
 
-    echo "Pushing to GitLab Container Registry..."
-    docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG"
-    echo ""
-  }
+    echo "Clone deploy repository..."
+    git clone http://gitlab-gitlab/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
 
-  function install_tiller() {
-    echo "Checking Tiller..."
-    echo "tst2"
-    helm init --upgrade
-    echo "tst"
-    kubectl rollout status -n "$TILLER_NAMESPACE" -w "deployment/tiller-deploy"
-    if ! helm version --debug; then
-      echo "Failed to init Tiller."
-      return 1
-    fi
-    echo ""
+    echo "Download helm dependencies..."
+    helm dep update search-engine-deploy/search-engine
+
+    echo "Deploy helm release $name to $KUBE_NAMESPACE"
+    helm upgrade --install \
+      --wait \
+      --set search-engine-ui.ingress.host="$host" \
+      --set $CI_PROJECT_NAME.image.tag=$CI_APPLICATION_TAG \
+      --namespace="$KUBE_NAMESPACE" \
+      --version="$CI_PIPELINE_ID-$CI_JOB_ID" \
+      "$name" \
+      search-engine-deploy/search-engine
   }
 
   function delete() {
@@ -214,7 +212,7 @@ stop_review:
 
   function trigger_deploy() {
     apk add curl
-    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master http://gitlab-gitlab/api/v4/projects/4/trigger/pipeline
+    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master http://gitlab-gitlab/api/v4/projects/3/trigger/pipeline
   }
 
 before_script:
