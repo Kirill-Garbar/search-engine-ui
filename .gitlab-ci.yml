@@ -191,7 +191,7 @@ stop_review:
     fi
 
     echo "Clone deploy repository..."
-    git clone http://gitlab-gitlab/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
+    git clone http://gitlab.$CI_DNS_ZONE/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
 
     echo "Download helm dependencies..."
     helm dep update search-engine-deploy/search-engine
