@@ -151,6 +151,7 @@ stop_review:
     echo `git rev-parse --abbrev-ref HEAD` >> build_info.txt
     docker build -t "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" .
 
+    echo $CI_REGISTRY_USER
     echo $CI_REGISTRY_PASSWORD
 
     if [[ -n "$CI_REGISTRY_USER" ]]; then
