@@ -24,7 +24,7 @@ build:
 test:
   stage: test
   image:
-    name: index.docker.io/$CI_PROJECT_PATH:${CI_COMMIT_REF_SLUG}
+    name: $CI_REGISTRY/$CI_PROJECT_PATH:${CI_COMMIT_REF_SLUG}
   script:
     - pip install -r requirements.txt -r requirements-test.txt
     - python -m unittest discover -s tests
@@ -93,8 +93,7 @@ stop_review:
 
 .auto_devops: &auto_devops |
   [[ "$TRACE" ]] && set -x
-  export CI_REGISTRY="index.docker.io"
-  export CI_APPLICATION_REPOSITORY=$CI_REGISTRY/$CI_PROJECT_PATH
+  export CI_APPLICATION_REPOSITORY=$CI_REGISTRY/$CI_REGISTRY_USER/$CI_PROJECT_NAME
   export CI_APPLICATION_TAG=$CI_COMMIT_REF_SLUG
   export CI_CONTAINER_NAME=ci_job_build_${CI_JOB_ID}
   export TILLER_NAMESPACE="kube-system"
@@ -113,9 +112,7 @@ stop_review:
 
   function install_tiller() {
     echo "Checking Tiller..."
-    echo "tst2"
     helm init --upgrade
-    echo "tst"
     kubectl rollout status -n "$TILLER_NAMESPACE" -w "deployment/tiller-deploy"
     if ! helm version --debug; then
       echo "Failed to init Tiller."
@@ -159,7 +156,7 @@ stop_review:
 
     if [[ -n "$CI_REGISTRY_USER" ]]; then
       echo "Logging to GitLab Container Registry with CI credentials..."
-      docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+      docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
       echo ""
     fi
 
