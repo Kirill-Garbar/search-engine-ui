@@ -23,8 +23,14 @@ build:
 
 test:
   stage: test
+  image:
+    name: index.docker.io/$CI_PROJECT_PATH:${CI_COMMIT_REF_SLUG}
   script:
-    - exit 0
+    - pip install -r requirements.txt -r requirements-test.txt
+    - python -m unittest discover -s tests
+    - coverage run -m unittest discover -s tests
+    - PROJECT=$(echo $CI_PROJECT_NAME | sed -e 's/search-engine-//g')
+    - coverage report --include $PROJECT/$PROJECT.py
   only:
     - branches
 
@@ -56,7 +62,6 @@ review:
   only:
     refs:
       - branches
-    kubernetes: active
   except:
     - master
 
@@ -67,7 +72,6 @@ trigger_deploy:
   only:
     refs:
       - master
-    kubernetes: active    
 
 stop_review:
   stage: cleanup
@@ -84,7 +88,6 @@ stop_review:
   only:
     refs:
       - branches
-    kubernetes: active
   except:
     - master
 
