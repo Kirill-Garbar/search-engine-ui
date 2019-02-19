@@ -57,7 +57,7 @@ review:
     host: $CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG.$CI_DNS_ZONE
   environment:
     name: review/$CI_PROJECT_PATH/$CI_COMMIT_REF_NAME
-    url: http://$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG
+    url: http://$CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG.$CI_DNS_ZONE
     on_stop: stop_review
   only:
     refs:
