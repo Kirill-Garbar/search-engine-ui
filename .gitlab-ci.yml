@@ -97,6 +97,7 @@ stop_review:
   export CI_APPLICATION_TAG=$CI_COMMIT_REF_SLUG
   export CI_CONTAINER_NAME=ci_job_build_${CI_JOB_ID}
   export TILLER_NAMESPACE="kube-system"
+  export CI_GITLAB_URL=${HTTP_HTTPS}${CI_GITLAB_FQDN}
 
   function setup_docker() {
     if ! docker info &>/dev/null; then
@@ -191,7 +192,7 @@ stop_review:
     fi
 
     echo "Clone deploy repository..."
-    git clone http://gitlab.$CI_DNS_ZONE/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
+    git clone $CI_GITLAB_URL/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
 
     echo "Download helm dependencies..."
     helm dep update search-engine-deploy/search-engine
@@ -217,7 +218,7 @@ stop_review:
 
   function trigger_deploy() {
     apk add curl
-    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master https://gitlab.$CI_DNS_ZONE/api/v4/projects/4/trigger/pipeline
+    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master $CI_GITLAB_URL/api/v4/projects/4/trigger/pipeline
   }
 
 before_script:
