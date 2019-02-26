@@ -29,8 +29,7 @@ test:
     - pip install -r requirements.txt -r requirements-test.txt
     - python -m unittest discover -s tests
     - coverage run -m unittest discover -s tests
-    - PROJECT=$(echo $CI_PROJECT_NAME | sed -e 's/search-engine-//g')
-    - coverage report --include $PROJECT/$PROJECT.py
+    - coverage report --include $CI_PROJECT_NAME/$CI_PROJECT_NAME.py
   only:
     - branches
 
@@ -192,22 +191,22 @@ stop_review:
     fi
 
     echo "Clone deploy repository..."
-    git clone $CI_GITLAB_URL/$CI_PROJECT_NAMESPACE/search-engine-deploy.git
+    git clone $CI_GITLAB_URL/$CI_PROJECT_NAMESPACE/deploy.git
 
     echo "Download helm dependencies..."
-    helm dep update search-engine-deploy/search-engine
+    helm dep update deploy/search-engine
 
     echo "Deploy helm release $name to $KUBE_NAMESPACE"
     helm upgrade --install \
       --wait \
-      --set search-engine-ui.ingress.host="$host" \
-      --set search-engine-ui.image.registry="$CI_REGISTRY" \
-      --set search-engine-crawler.image.registry="$CI_REGISTRY" \
+      --set ui.ingress.host="$host" \
+      --set ui.image.registry="$CI_REGISTRY" \
+      --set crawler.image.registry="$CI_REGISTRY" \
       --set $CI_PROJECT_NAME.image.tag=$CI_APPLICATION_TAG \
       --namespace="$KUBE_NAMESPACE" \
       --version="$CI_PIPELINE_ID-$CI_JOB_ID" \
       "$name" \
-      search-engine-deploy/search-engine
+      deploy/search-engine
   }
 
   function delete() {
@@ -218,7 +217,7 @@ stop_review:
 
   function trigger_deploy() {
     apk add curl
-    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master $CI_GITLAB_URL/api/v4/projects/${CI_PROJECT_NAMESPACE}%2Fsearch-engine-deploy/trigger/pipeline
+    curl -X POST -F token=$CI_SEARCH_ENGINE_DEPLOY_TOKEN -F ref=master $CI_GITLAB_URL/api/v4/projects/${CI_PROJECT_NAMESPACE}%2Fdeploy/trigger/pipeline
   }
 
 before_script:
