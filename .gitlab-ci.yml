@@ -203,6 +203,10 @@ stop_review:
       --set ui.image.registry="$CI_REGISTRY" \
       --set crawler.image.registry="$CI_REGISTRY" \
       --set $CI_PROJECT_NAME.image.tag=$CI_APPLICATION_TAG \
+      --set rabbitmq.rabbitmq.username="$CI_RMQ_USER" \
+      --set rabbitmq.rabbitmq.password="$CI_RMQ_PASSWORD" \
+      --set crawler.env.rabbitmq_user="$CI_RMQ_USER" \
+      --set crawler.env.rabbitmq_password="$CI_RMQ_PASSWORD" \
       --namespace="$KUBE_NAMESPACE" \
       --version="$CI_PIPELINE_ID-$CI_JOB_ID" \
       "$name" \
